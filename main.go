@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/samchelini/swargo/bar"
 	"fmt"
+	"github.com/samchelini/swargo/bar"
 )
 
 func main() {

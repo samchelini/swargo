@@ -1,13 +1,12 @@
 package bar
 
 import (
-  "encoding/json"
-  "github.com/samchelini/swargo/blocks"
+	"encoding/json"
 )
 
 type bar struct {
 	header *header
-	blocks []*blocks.Block
+	blocks []*Block
 }
 
 type header struct {
@@ -20,7 +19,7 @@ type header struct {
 func NewBar() *bar {
 	b := new(bar)
 	b.header = &header{Version: 1}
-  b.blocks = make([]*blocks.Block, 0)
+	b.blocks = make([]*Block, 0)
 	return b
 }
 
