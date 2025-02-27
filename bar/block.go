@@ -1,7 +1,7 @@
 package bar
 
 type BlockRunner interface {
-	Run()
+	RunBlock()
 }
 
 type Block struct {
@@ -23,5 +23,5 @@ type Block struct {
 	Separator           bool   `json:"separator,omitempty"`
 	SeparatorBlockWidth int    `json:"separator_block_width,omitempty"`
 	Markup              string `json:"markup,omitempty"`
-	bar                 *bar
+  update chan bool
 }

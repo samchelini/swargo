@@ -7,6 +7,7 @@ import (
 type bar struct {
 	header *header
 	blocks []*Block
+  update chan bool
 }
 
 type header struct {
@@ -20,6 +21,7 @@ func NewBar() *bar {
 	b := new(bar)
 	b.header = &header{Version: 1}
 	b.blocks = make([]*Block, 0)
+  b.update = make(chan bool)
 	return b
 }
 
@@ -38,4 +40,9 @@ func (b *bar) SetStopSignal(signal int) {
 func (b *bar) String() string {
 	json, _ := json.Marshal(b.header)
 	return string(json)
+}
+
+func (b *bar) AddBlock(block *Block) {
+  block.update = b.update
+  b.blocks = append(b.blocks, block)
 }
