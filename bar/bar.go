@@ -2,12 +2,13 @@ package bar
 
 import (
 	"encoding/json"
+  "fmt"
 )
 
 type bar struct {
-	header *header
-	blocks []*Block
-  update chan bool
+	header  *header
+	blocks  []BlockRunner
+	updater chan bool
 }
 
 type header struct {
@@ -20,8 +21,8 @@ type header struct {
 func NewBar() *bar {
 	b := new(bar)
 	b.header = &header{Version: 1}
-	b.blocks = make([]*Block, 0)
-  b.update = make(chan bool)
+	b.blocks = make([]BlockRunner, 0)
+	b.updater = make(chan bool)
 	return b
 }
 
@@ -42,7 +43,16 @@ func (b *bar) String() string {
 	return string(json)
 }
 
-func (b *bar) AddBlock(block *Block) {
-  block.update = b.update
-  b.blocks = append(b.blocks, block)
+func (b *bar) AddBlock(block BlockRunner) {
+	block.Sync(b.updater)
+	b.blocks = append(b.blocks, block)
+}
+
+func (b *bar) Run() {
+  for {
+    _ = <-b.updater
+    for i := range b.blocks {
+      fmt.Println(b.blocks[i])
+    }
+  }
 }

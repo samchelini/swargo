@@ -6,6 +6,12 @@ import (
 )
 
 func main() {
-	bar := bar.NewBar()
-	fmt.Println(bar)
+	b := bar.NewBar()
+	fmt.Println(b)
+
+  dateBlock := new(bar.DateBlock)
+  b.AddBlock(dateBlock)
+  go dateBlock.Run()
+
+  b.Run()
 }

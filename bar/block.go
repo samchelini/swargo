@@ -1,11 +1,18 @@
 package bar
 
+import (
+  "encoding/json"
+)
+
 type BlockRunner interface {
-	RunBlock()
+	Run()
+	Sync(updater chan bool)
+	Update()
+  String() string
 }
 
 type Block struct {
-	BlockRunner
+	BlockRunner `json:"-"`
 	FullText            string `json:"full_text"`
 	ShortText           string `json:"short_text,omitempty"`
 	Color               string `json:"color,omitempty"`
@@ -23,5 +30,18 @@ type Block struct {
 	Separator           bool   `json:"separator,omitempty"`
 	SeparatorBlockWidth int    `json:"separator_block_width,omitempty"`
 	Markup              string `json:"markup,omitempty"`
-  update chan bool
+	updater             chan bool
+}
+
+func (b *Block) Sync(updater chan bool) {
+	b.updater = updater
+}
+
+func (b *Block) Update() {
+	b.updater <- true
+}
+
+func (b *Block) String() string {
+    json, _ := json.Marshal(b)
+    return string(json)
 }
