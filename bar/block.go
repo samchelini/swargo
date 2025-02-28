@@ -16,7 +16,6 @@ type Block interface {
 // contains the block fields defined by the swaybar protocol
 // implements the Update, Sync, and String functions for the Block interface
 type BlockTemplate struct {
-	Block               `json:"-"`
 	FullText            string `json:"full_text"`
 	ShortText           string `json:"short_text,omitempty"`
 	Color               string `json:"color,omitempty"`
