@@ -4,15 +4,19 @@ import (
   "encoding/json"
 )
 
-type BlockRunner interface {
+// methods all blocks should implement
+// only Run() needs to be implemented if using the BlockTemplate
+type Block interface {
 	Run()
-	Sync(updater chan bool)
+	Sync(update chan bool)
 	Update()
   String() string
 }
 
-type Block struct {
-	BlockRunner `json:"-"`
+// contains the block fields defined by the swaybar protocol
+// implements the Update, Sync, and String functions for the Block interface
+type BlockTemplate struct {
+	Block `json:"-"`
 	FullText            string `json:"full_text"`
 	ShortText           string `json:"short_text,omitempty"`
 	Color               string `json:"color,omitempty"`
@@ -30,18 +34,22 @@ type Block struct {
 	Separator           bool   `json:"separator,omitempty"`
 	SeparatorBlockWidth int    `json:"separator_block_width,omitempty"`
 	Markup              string `json:"markup,omitempty"`
-	updater             chan bool
+	update             chan bool
 }
 
-func (b *Block) Sync(updater chan bool) {
-	b.updater = updater
+// adds the bar's update channel to the block
+func (b *BlockTemplate) Sync(update chan bool) {
+	b.update = update
 }
 
-func (b *Block) Update() {
-	b.updater <- true
+// sends update signal to the update channel
+// this triggers the bar to update the status line
+func (b *BlockTemplate) Update() {
+	b.update <- true
 }
 
-func (b *Block) String() string {
+// returns the block as a JSON string
+func (b *BlockTemplate) String() string {
     json, _ := json.Marshal(b)
     return string(json)
 }

@@ -1,17 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"github.com/samchelini/swargo/bar"
 )
 
 func main() {
 	b := bar.NewBar()
-	fmt.Println(b)
-
-  dateBlock := new(bar.DateBlock)
-  b.AddBlock(dateBlock)
-  go dateBlock.Run()
-
+  dateTimeBlock := new(bar.DateTimeBlock)
+  b.AddBlock(dateTimeBlock)
   b.Run()
 }
