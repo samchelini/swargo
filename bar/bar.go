@@ -2,7 +2,7 @@ package bar
 
 import (
 	"encoding/json"
-  "fmt"
+	"fmt"
 )
 
 // newline character defined by the swaybar protocol
@@ -10,8 +10,8 @@ const newLine = 0x0A
 
 // contains the swaybar header, array of blocks, and an update channel
 type bar struct {
-	header  *header
-	blocks  []Block
+	header *header
+	blocks []Block
 	update chan bool
 }
 
@@ -61,18 +61,18 @@ func (b *bar) AddBlock(block Block) {
 
 // runs each block in a goroutine
 func (b *bar) runBlocks() {
-  for i := range b.blocks {
-    go b.blocks[i].Run()
-  }
+	for i := range b.blocks {
+		go b.blocks[i].Run()
+	}
 }
 
 // start running the blocks and wait for updates
 func (b *bar) Run() {
-  b.runBlocks()
-  fmt.Printf("%s%c", b.Header(), newLine) // print header and newline
-  for {
-    _ = <-b.update // wait for signal from the update channel
-    blocksJSON, _ := json.Marshal(b.blocks)
-    fmt.Println(string(blocksJSON))
-  }
+	b.runBlocks()
+	fmt.Printf("%s%c", b.Header(), newLine) // print header and newline
+	for {
+		_ = <-b.update // wait for signal from the update channel
+		blocksJSON, _ := json.Marshal(b.blocks)
+		fmt.Println(string(blocksJSON))
+	}
 }

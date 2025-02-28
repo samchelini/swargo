@@ -1,7 +1,7 @@
 package bar
 
 import (
-  "encoding/json"
+	"encoding/json"
 )
 
 // methods all blocks should implement
@@ -10,13 +10,13 @@ type Block interface {
 	Run()
 	Sync(update chan bool)
 	Update()
-  String() string
+	String() string
 }
 
 // contains the block fields defined by the swaybar protocol
 // implements the Update, Sync, and String functions for the Block interface
 type BlockTemplate struct {
-	Block `json:"-"`
+	Block               `json:"-"`
 	FullText            string `json:"full_text"`
 	ShortText           string `json:"short_text,omitempty"`
 	Color               string `json:"color,omitempty"`
@@ -34,7 +34,7 @@ type BlockTemplate struct {
 	Separator           bool   `json:"separator,omitempty"`
 	SeparatorBlockWidth int    `json:"separator_block_width,omitempty"`
 	Markup              string `json:"markup,omitempty"`
-	update             chan bool
+	update              chan bool
 }
 
 // adds the bar's update channel to the block
@@ -50,6 +50,6 @@ func (b *BlockTemplate) Update() {
 
 // returns the block as a JSON string
 func (b *BlockTemplate) String() string {
-    json, _ := json.Marshal(b)
-    return string(json)
+	json, _ := json.Marshal(b)
+	return string(json)
 }

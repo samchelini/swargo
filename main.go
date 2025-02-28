@@ -6,7 +6,7 @@ import (
 
 func main() {
 	b := bar.NewBar()
-  dateTimeBlock := new(bar.DateTimeBlock)
-  b.AddBlock(dateTimeBlock)
-  b.Run()
+	dateTimeBlock := new(bar.DateTimeBlock)
+	b.AddBlock(dateTimeBlock)
+	b.Run()
 }

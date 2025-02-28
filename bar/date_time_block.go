@@ -20,6 +20,6 @@ func (b *DateTimeBlock) Run() {
 }
 
 // returns a new instance of DateTimeBlock
-func (b *DateTimeBlock) New() (*DateTimeBlock) {
-  return new(DateTimeBlock)
+func (b *DateTimeBlock) New() *DateTimeBlock {
+	return new(DateTimeBlock)
 }
