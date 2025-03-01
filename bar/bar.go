@@ -71,7 +71,7 @@ func (b *bar) Run() {
 	b.runBlocks()
 	fmt.Printf("%s%c", b.Header(), newLine) // print header and newline
 	for {
-		_ = <-b.update // wait for signal from the update channel
+		<-b.update // wait for signal from the update channel
 		blocksJSON, _ := json.Marshal(b.blocks)
 		fmt.Println(string(blocksJSON))
 	}
