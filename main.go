@@ -11,6 +11,7 @@ func main() {
 
 	// initialize bar
 	b := bar.NewBar()
+	b.EnablePrettyPrint()
 
 	// create and add a DateTimeBlock
 	dateTimeBlock := new(bar.DateTimeBlock)

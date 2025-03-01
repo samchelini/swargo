@@ -5,14 +5,12 @@ import (
 	"fmt"
 )
 
-// newline character defined by the swaybar protocol
-const newLine = 0x0A
-
 // contains the swaybar header, array of blocks, and an update channel
 type bar struct {
-	header *header
-	blocks []Block
-	update chan bool
+	header      *header
+	blocks      []Block
+	update      chan bool
+	prettyPrint bool
 }
 
 // header defined by the swaybar protocol
@@ -37,6 +35,11 @@ func (b *bar) EnableClickEvents() {
 	b.header.ClickEvents = true
 }
 
+// enable pretty print for header and blocks JSON
+func (b *bar) EnablePrettyPrint() {
+	b.prettyPrint = true
+}
+
 // set continue signal in the header
 func (b *bar) SetContSignal(signal int) {
 	b.header.ContSignal = signal
@@ -49,8 +52,24 @@ func (b *bar) SetStopSignal(signal int) {
 
 // returns header as a JSON string
 func (b *bar) Header() string {
-	json, _ := json.Marshal(b.header)
-	return string(json)
+	var headerJSON []byte
+	if b.prettyPrint {
+		headerJSON, _ = json.MarshalIndent(b.header, "", "  ")
+	} else {
+		headerJSON, _ = json.Marshal(b.header)
+	}
+	return string(headerJSON)
+}
+
+// returns blocks as a JSON string
+func (b *bar) Blocks() string {
+	var blocksJSON []byte
+	if b.prettyPrint {
+		blocksJSON, _ = json.MarshalIndent(b.blocks, "  ", "  ")
+	} else {
+		blocksJSON, _ = json.Marshal(b.blocks)
+	}
+	return string(blocksJSON)
 }
 
 // sets update channel for the block and adds it to the bar
@@ -68,11 +87,27 @@ func (b *bar) runBlocks() {
 
 // start running the blocks and wait for updates
 func (b *bar) Run() {
+	// start running all the blocks
 	b.runBlocks()
-	fmt.Printf("%s%c", b.Header(), newLine) // print header and newline
+
+	// print header and start of the infinite array
+	fmt.Printf("%s%c[", b.Header(), 0x0A)
+	if b.prettyPrint {
+		fmt.Print("\n  ")
+	}
+
+	// print first array of blocks
+	fmt.Print(b.Blocks())
+
+	// continue printing blocks as they are updated in an infinite array
 	for {
 		<-b.update // wait for signal from the update channel
-		blocksJSON, _ := json.Marshal(b.blocks)
-		fmt.Println(string(blocksJSON))
+
+		// print blocks in infinite array
+		fmt.Print(",")
+		if b.prettyPrint {
+			fmt.Print("\n  ")
+		}
+		fmt.Print(b.Blocks())
 	}
 }
