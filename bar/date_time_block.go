@@ -18,8 +18,3 @@ func (b *DateTimeBlock) Run() {
 		time.Sleep(1 * time.Second)
 	}
 }
-
-// returns a new instance of DateTimeBlock
-func (b *DateTimeBlock) New() *DateTimeBlock {
-	return new(DateTimeBlock)
-}
