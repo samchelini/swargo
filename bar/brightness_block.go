@@ -14,8 +14,8 @@ type BrightnessBlock struct {
 }
 
 // gets and watches for changes to brightness file
-func (b *BrightnessBlock) Run() {
-	b.init()
+func (block *BrightnessBlock) Run() {
+	block.FullText = strconv.Itoa(block.getBrightness())
 
 	// initialize inotify instance
 	fd, _ := syscall.InotifyInit()
@@ -43,8 +43,8 @@ func (b *BrightnessBlock) Run() {
 			//log.Printf("error reading event: %s", err)
 			break
 		}
-		b.init()
-		b.Update()
+		block.FullText = strconv.Itoa(block.getBrightness())
+		block.Update()
 		//log.Printf("n: %d", n)
 		//log.Printf("buf: % X", buf)
 	}
@@ -56,18 +56,21 @@ func (b *BrightnessBlock) Run() {
 	*/
 }
 
-func (b *BrightnessBlock) init() {
-	actualBrightness, _ := readFile(b.dir + "/actual_brightness")
-	maxBrightness, _ := readFile(b.dir + "/max_brightness")
-	b.actualBrightness, _ = strconv.Atoi(actualBrightness[:len(actualBrightness)-1])
-	b.maxBrightness, _ = strconv.Atoi(maxBrightness[:len(maxBrightness)-1])
-	brightness := (float64(b.actualBrightness)/float64(b.maxBrightness)*100 + 0.5)
-	b.FullText = strconv.Itoa(int(brightness))
+// calculates the current brightness percentage
+func (block *BrightnessBlock) getBrightness() int {
+	actualBrightness, _ := readFile(block.dir + "/actual_brightness")
+	maxBrightness, _ := readFile(block.dir + "/max_brightness")
+	block.actualBrightness, _ = strconv.Atoi(actualBrightness[:len(actualBrightness)-1])
+	block.maxBrightness, _ = strconv.Atoi(maxBrightness[:len(maxBrightness)-1])
+
+	// math trick to round to nearest integer
+	brightness := int((float64(block.actualBrightness)/float64(block.maxBrightness)*100 + 0.5))
+	return brightness
 }
 
 // set brightness directory
-func (b *BrightnessBlock) SetDir(dir string) {
-	b.dir = dir
+func (block *BrightnessBlock) SetDir(dir string) {
+	block.dir = dir
 }
 
 // opens/reads a file and returns the string
