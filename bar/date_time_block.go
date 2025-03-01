@@ -9,12 +9,16 @@ type DateTimeBlock struct {
 	BlockTemplate
 }
 
-// gets and formats the current time, updates every second
-func (b *DateTimeBlock) Run() {
+// updates the time every second
+func (block *DateTimeBlock) Run() {
 	for {
-		t := time.Now().Format("01/02/2006 03:04:05 PM")
-		b.FullText = t
-		b.Update()
+		block.FullText = block.getTime()
+		block.Update()
 		time.Sleep(1 * time.Second)
 	}
+}
+
+// get formatted time as string
+func (block *DateTimeBlock) getTime() string {
+	return time.Now().Format("01/02/2006 03:04:05 PM")
 }
