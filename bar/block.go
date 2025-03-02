@@ -8,7 +8,7 @@ import (
 // only Run() needs to be implemented if using the BlockTemplate
 type Block interface {
 	Run()
-	Sync(update chan bool)
+	Sync(update chan bool, err chan string)
 	Update()
 	String() string
 }
@@ -34,11 +34,13 @@ type BlockTemplate struct {
 	SeparatorBlockWidth int    `json:"separator_block_width,omitempty"`
 	Markup              string `json:"markup,omitempty"`
 	update              chan bool
+	err                 chan string
 }
 
 // adds the bar's update channel to the block
-func (b *BlockTemplate) Sync(update chan bool) {
+func (b *BlockTemplate) Sync(update chan bool, err chan string) {
 	b.update = update
+	b.err = err
 }
 
 // sends update signal to the update channel

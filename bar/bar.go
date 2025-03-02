@@ -3,6 +3,15 @@ package bar
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+)
+
+const (
+	lflags int    = log.Ldate | log.Ltime | log.Lmicroseconds | log.Lmsgprefix
+	green  string = ": \033[92m"
+	red    string = ": \033[91m"
+	reset  string = "\033[0m"
 )
 
 // contains the swaybar header, array of blocks, and an update channel
@@ -10,7 +19,9 @@ type bar struct {
 	header      *header
 	blocks      []Block
 	update      chan bool
+	err         chan string
 	prettyPrint bool
+	logger      *log.Logger
 }
 
 // header defined by the swaybar protocol
@@ -27,12 +38,35 @@ func NewBar() *bar {
 	b.header = &header{Version: 1}
 	b.blocks = make([]Block, 0)
 	b.update = make(chan bool)
+	b.err = make(chan string)
 	return b
 }
 
 // set click events to true in the header
 func (b *bar) EnableClickEvents() {
 	b.header.ClickEvents = true
+}
+
+// enable logging to stderr for debugging
+func (b *bar) EnableLogging() {
+	b.logger = log.New(os.Stderr, "", lflags)
+	b.Log("logging enabled")
+}
+
+// log any message (green colored)
+func (b *bar) Log(msg string) {
+	if b.logger != nil {
+		b.logger.SetPrefix(green)
+		b.logger.Printf("%s%s\n", msg, reset)
+	}
+}
+
+// log an error (red colored)
+func (b *bar) LogError(msg string) {
+	if b.logger != nil {
+		b.logger.SetPrefix(red)
+		b.logger.Printf("%s%s\n", msg, reset)
+	}
 }
 
 // enable pretty print for header and blocks JSON
@@ -52,29 +86,38 @@ func (b *bar) SetStopSignal(signal int) {
 
 // returns header as a JSON string
 func (b *bar) Header() string {
+	var err error
 	var headerJSON []byte
 	if b.prettyPrint {
-		headerJSON, _ = json.MarshalIndent(b.header, "", "  ")
+		headerJSON, err = json.MarshalIndent(b.header, "", "  ")
 	} else {
-		headerJSON, _ = json.Marshal(b.header)
+		headerJSON, err = json.Marshal(b.header)
 	}
+	if err != nil {
+		b.LogError("error marshalling header: " + err.Error())
+	}
+
 	return string(headerJSON)
 }
 
 // returns blocks as a JSON string
 func (b *bar) Blocks() string {
+	var err error
 	var blocksJSON []byte
 	if b.prettyPrint {
-		blocksJSON, _ = json.MarshalIndent(b.blocks, "  ", "  ")
+		blocksJSON, err = json.MarshalIndent(b.blocks, "  ", "  ")
 	} else {
-		blocksJSON, _ = json.Marshal(b.blocks)
+		blocksJSON, err = json.Marshal(b.blocks)
+	}
+	if err != nil {
+		b.LogError("error marshalling blocks: " + err.Error())
 	}
 	return string(blocksJSON)
 }
 
-// sets update channel for the block and adds it to the bar
+// sets update and error channel for the block and adds it to the bar
 func (b *bar) AddBlock(block Block) {
-	block.Sync(b.update)
+	block.Sync(b.update, b.err)
 	b.blocks = append(b.blocks, block)
 }
 
