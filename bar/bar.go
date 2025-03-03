@@ -144,13 +144,17 @@ func (b *bar) Run() {
 
 	// continue printing blocks as they are updated in an infinite array
 	for {
-		<-b.update // wait for signal from the update channel
+		select {
+		case <-b.update: // wait for signal from the update channel
 
-		// print blocks in infinite array
-		fmt.Print(",")
-		if b.prettyPrint {
-			fmt.Print("\n  ")
+			// print blocks in infinite array
+			fmt.Print(",")
+			if b.prettyPrint {
+				fmt.Print("\n  ")
+			}
+			fmt.Print(b.Blocks())
+		case msg := <-b.err: // handle errors from blocks
+			b.LogError(msg)
 		}
-		fmt.Print(b.Blocks())
 	}
 }
