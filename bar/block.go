@@ -1,16 +1,11 @@
 package bar
 
-import (
-	"encoding/json"
-)
-
 // methods all blocks should implement
 // only Run() needs to be implemented if using the BlockTemplate
 type Block interface {
 	Run()
 	Sync(update chan bool, err chan string)
 	Update()
-	String() string
 }
 
 // contains the block fields defined by the swaybar protocol
@@ -47,10 +42,4 @@ func (b *BlockTemplate) Sync(update chan bool, err chan string) {
 // this triggers the bar to update the status line
 func (b *BlockTemplate) Update() {
 	b.update <- true
-}
-
-// returns the block as a JSON string
-func (b *BlockTemplate) String() string {
-	json, _ := json.Marshal(b)
-	return string(json)
 }
