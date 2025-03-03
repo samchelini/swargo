@@ -6,6 +6,7 @@ type Block interface {
 	Run()
 	Sync(update chan bool, err chan string)
 	Update()
+	LogError(msg string)
 }
 
 // contains the block fields defined by the swaybar protocol
@@ -42,4 +43,11 @@ func (b *BlockTemplate) Sync(update chan bool, err chan string) {
 // this triggers the bar to update the status line
 func (b *BlockTemplate) Update() {
 	b.update <- true
+}
+
+// send error to the err channel
+func (b *BlockTemplate) LogError(msg string) {
+	b.err <- msg
+	b.FullText = "ERROR"
+	b.Urgent = true
 }

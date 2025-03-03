@@ -18,50 +18,59 @@ func (block *BrightnessBlock) Run() {
 	block.FullText = strconv.Itoa(block.getBrightness())
 
 	// initialize inotify instance
-	fd, _ := syscall.InotifyInit()
-	/*
-	  if err != nil {
-	    log.Printf("error initializing inotify: %s", err)
-	  }
-	*/
+	fd, err := syscall.InotifyInit()
+	if err != nil {
+		block.LogError("error initializing inotify: " + err.Error())
+		return
+	}
 
 	// add file to inotify watch list
-	_, _ = syscall.InotifyAddWatch(fd, "/sys/class/backlight/intel_backlight/actual_brightness", syscall.IN_MODIFY)
-	/*
-	  if err != nil {
-	    log.Printf("error adding item to watch list: %s", err)
-	  }
-
-	  log.Printf("wd: %d", wd)
-	*/
+	_, err = syscall.InotifyAddWatch(fd, block.dir+"/actual_brightness", syscall.IN_MODIFY)
+	if err != nil {
+		block.LogError("error adding item to watch list: " + err.Error())
+		return
+	}
 
 	// read events
 	var buf [syscall.SizeofInotifyEvent]byte
 	for {
 		_, err := syscall.Read(fd, buf[:])
 		if err != nil {
-			//log.Printf("error reading event: %s", err)
-			break
+			block.LogError("error reading event: " + err.Error())
+			return
 		}
 		block.FullText = strconv.Itoa(block.getBrightness())
 		block.Update()
-		//log.Printf("n: %d", n)
-		//log.Printf("buf: % X", buf)
 	}
-	_ = syscall.Close(fd)
-	/*
-	  if err != nil {
-	    log.Printf("error closing inotify: %s", err)
-	  }
-	*/
+
+	// close inotify
+	err = syscall.Close(fd)
+	if err != nil {
+		block.LogError("error closing inotify: " + err.Error())
+	}
 }
 
 // calculates the current brightness percentage
 func (block *BrightnessBlock) getBrightness() int {
-	actualBrightness, _ := readFile(block.dir + "/actual_brightness")
-	maxBrightness, _ := readFile(block.dir + "/max_brightness")
-	block.actualBrightness, _ = strconv.Atoi(actualBrightness[:len(actualBrightness)-1])
-	block.maxBrightness, _ = strconv.Atoi(maxBrightness[:len(maxBrightness)-1])
+	actualBrightness, err := readFile(block.dir + "/actual_brightness")
+	if err != nil {
+		block.LogError("error reading actual_brightness: " + err.Error())
+	}
+
+	maxBrightness, err := readFile(block.dir + "/max_brightness")
+	if err != nil {
+		block.LogError("error reading max_brightness: " + err.Error())
+	}
+
+	block.actualBrightness, err = strconv.Atoi(actualBrightness[:len(actualBrightness)-1])
+	if err != nil {
+		block.LogError("error converting actual_brightness to int: " + err.Error())
+	}
+
+	block.maxBrightness, err = strconv.Atoi(maxBrightness[:len(maxBrightness)-1])
+	if err != nil {
+		block.LogError("error converting max_brightness to int: " + err.Error())
+	}
 
 	// math trick to round to nearest integer
 	brightness := int((float64(block.actualBrightness)/float64(block.maxBrightness)*100 + 0.5))
