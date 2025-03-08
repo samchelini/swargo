@@ -56,5 +56,5 @@ func (b *BlockTemplate) LogError(msg string) {
 
 // set full text with spaces between the strings
 func (b *BlockTemplate) SetFullText(elems ...string) {
-	b.FullText = strings.Join(elems, " ")
+	b.FullText = strings.TrimSpace(strings.Join(elems, " "))
 }
