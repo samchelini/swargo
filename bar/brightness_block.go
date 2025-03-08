@@ -16,7 +16,9 @@ type BrightnessBlock struct {
 
 // gets and watches for changes to brightness file
 func (block *BrightnessBlock) Run() {
-	block.FullText = block.prefix + " " + strconv.Itoa(block.getBrightness())
+  // initialize text to current brightness
+	block.SetFullText(block.prefix, strconv.Itoa(block.getBrightness()))
+  block.Update()
 
 	// initialize inotify instance
 	fd, err := syscall.InotifyInit()
@@ -40,7 +42,7 @@ func (block *BrightnessBlock) Run() {
 			block.LogError("error reading event: " + err.Error())
 			return
 		}
-		block.FullText = block.prefix + " " + strconv.Itoa(block.getBrightness())
+		block.SetFullText(block.prefix, strconv.Itoa(block.getBrightness()))
 		block.Update()
 	}
 
@@ -106,6 +108,7 @@ func readFile(filePath string) (string, error) {
 	return data, nil
 }
 
+// set prefix before the brightness percentage
 func (block *BrightnessBlock) SetPrefix(prefix string) {
 	block.prefix = prefix
 }

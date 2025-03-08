@@ -12,7 +12,7 @@ type DateTimeBlock struct {
 // updates the time every second
 func (block *DateTimeBlock) Run() {
 	for {
-		block.FullText = block.getTime()
+		block.SetFullText(block.getTime())
 		block.Update()
 		time.Sleep(1 * time.Second)
 	}
