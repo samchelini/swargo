@@ -1,5 +1,9 @@
 package bar
 
+import (
+	"strings"
+)
+
 // methods all blocks should implement
 // only Run() needs to be implemented if using the BlockTemplate
 type Block interface {
@@ -48,4 +52,9 @@ func (b *BlockTemplate) LogError(msg string) {
 	b.err <- msg
 	b.FullText = "ERROR"
 	b.Urgent = true
+}
+
+// set full text with spaces between the strings
+func (b *BlockTemplate) SetFullText(elems ...string) {
+	b.FullText = strings.Join(elems, " ")
 }
