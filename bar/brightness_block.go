@@ -1,6 +1,7 @@
 package bar
 
 import (
+	"os"
 	"strconv"
 	"syscall"
 )
@@ -8,17 +9,15 @@ import (
 // block for displaying brightness
 type BrightnessBlock struct {
 	BlockTemplate
-	dir              string
-	actualBrightness int
-	maxBrightness    int
-	prefix           string
+	dir    string
+	prefix string
 }
 
 // gets and watches for changes to brightness file
 func (block *BrightnessBlock) Run() {
-  // initialize text to current brightness
+	// initialize text to current brightness
 	block.SetFullText(block.prefix, strconv.Itoa(block.getBrightness()))
-  block.Update()
+	block.Update()
 
 	// initialize inotify instance
 	fd, err := syscall.InotifyInit()
@@ -55,57 +54,39 @@ func (block *BrightnessBlock) Run() {
 
 // calculates the current brightness percentage
 func (block *BrightnessBlock) getBrightness() int {
-	actualBrightness, err := readFile(block.dir + "/actual_brightness")
+	var buf []byte
+	var actualBrightness float64
+	var maxBrightness float64
+
+	// get actual_brightness
+	buf, err := os.ReadFile(block.dir + "/actual_brightness")
 	if err != nil {
 		block.LogError("error reading actual_brightness: " + err.Error())
 	}
 
-	maxBrightness, err := readFile(block.dir + "/max_brightness")
+	actualBrightness, err = strconv.ParseFloat(string(buf[:len(buf)-1]), 64)
+	if err != nil {
+		block.LogError("error converting actual_brightness to float: " + err.Error())
+	}
+
+	// get max_brightness
+	buf, err = os.ReadFile(block.dir + "/max_brightness")
 	if err != nil {
 		block.LogError("error reading max_brightness: " + err.Error())
 	}
 
-	block.actualBrightness, err = strconv.Atoi(actualBrightness[:len(actualBrightness)-1])
+	maxBrightness, err = strconv.ParseFloat(string(buf[:len(buf)-1]), 64)
 	if err != nil {
-		block.LogError("error converting actual_brightness to int: " + err.Error())
-	}
-
-	block.maxBrightness, err = strconv.Atoi(maxBrightness[:len(maxBrightness)-1])
-	if err != nil {
-		block.LogError("error converting max_brightness to int: " + err.Error())
+		block.LogError("error converting max_brightness to float: " + err.Error())
 	}
 
 	// math trick to round to nearest integer
-	brightness := int((float64(block.actualBrightness)/float64(block.maxBrightness)*100 + 0.5))
-	return brightness
+	return int((actualBrightness/maxBrightness)*100 + 0.5)
 }
 
 // set brightness directory
 func (block *BrightnessBlock) SetDir(dir string) {
 	block.dir = dir
-}
-
-// opens/reads a file and returns the string
-func readFile(filePath string) (string, error) {
-	var data string // initialize return string
-
-	// open file as read-only
-	fd, err := syscall.Open(filePath, syscall.O_RDONLY, 0)
-	if err != nil {
-		return data, err
-	}
-	defer syscall.Close(fd)
-
-	// create a buffer and read the file contents
-	var buf [8]byte
-	n, err := syscall.Read(fd, buf[:])
-	if err != nil {
-		return data, err
-	}
-
-	// convert file contents to a string
-	data = string(buf[:n])
-	return data, nil
 }
 
 // set prefix before the brightness percentage
