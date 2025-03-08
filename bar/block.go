@@ -5,8 +5,6 @@ package bar
 type Block interface {
 	Run()
 	Sync(update chan bool, err chan string)
-	Update()
-	LogError(msg string)
 }
 
 // contains the block fields defined by the swaybar protocol
