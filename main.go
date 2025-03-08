@@ -21,6 +21,7 @@ func main() {
 	// create and add a BrightnessBlock
 	brightnessBlock := new(bar.BrightnessBlock)
 	brightnessBlock.SetDir("/sys/class/backlight/intel_backlight")
+	brightnessBlock.SetPrefix("\u2600")
 	b.AddBlock(brightnessBlock)
 
 	// run the bar
