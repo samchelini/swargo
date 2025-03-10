@@ -1,9 +1,9 @@
 package bar
 
 import (
+	"github.com/samchelini/swargo/filewatcher"
 	"os"
 	"strconv"
-	"syscall"
 )
 
 // block for displaying brightness
@@ -19,24 +19,23 @@ func (block *BrightnessBlock) Run() {
 	block.SetFullText(block.prefix, strconv.Itoa(block.getBrightness()))
 	block.Update()
 
-	// initialize inotify instance
-	fd, err := syscall.InotifyInit()
+	// initialize filewatcher
+	fw, err := filewatcher.NewFileWatcher()
 	if err != nil {
 		block.LogError("error initializing inotify: " + err.Error())
 		return
 	}
 
-	// add file to inotify watch list
-	_, err = syscall.InotifyAddWatch(fd, block.dir+"/actual_brightness", syscall.IN_MODIFY)
+	// add file to watch list for modify events
+	err = fw.AddWatch(block.dir+"/actual_brightness", filewatcher.IN_MODIFY)
 	if err != nil {
 		block.LogError("error adding item to watch list: " + err.Error())
 		return
 	}
 
-	// read events
-	var buf [syscall.SizeofInotifyEvent]byte
+	// watch for events
 	for {
-		_, err := syscall.Read(fd, buf[:])
+		err := fw.Watch()
 		if err != nil {
 			block.LogError("error reading event: " + err.Error())
 			return
@@ -45,10 +44,10 @@ func (block *BrightnessBlock) Run() {
 		block.Update()
 	}
 
-	// close inotify
-	err = syscall.Close(fd)
+	// close filewatcher
+	err = fw.Close()
 	if err != nil {
-		block.LogError("error closing inotify: " + err.Error())
+		block.LogError("error closing filewatcher: " + err.Error())
 	}
 }
 
