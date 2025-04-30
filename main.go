@@ -34,7 +34,7 @@ func main() {
 		b.AddBlock(batteryBlock)
 	*/
 
-  // netlink testing
+	// netlink testing
 	log.Println("creating generic netlink connection...")
 	nl, err := netlink.Dial(netlink.Generic)
 	if err != nil {

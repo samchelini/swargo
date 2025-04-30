@@ -1,10 +1,10 @@
 package netlink
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"golang.org/x/sys/unix"
-  "bytes"
-  "encoding/binary"
 )
 
 const (
@@ -26,7 +26,7 @@ type GenericAttribute struct {
 
 type GenericMessageBuilder struct {
 	msg *GenericMessage
-  err error
+	err error
 }
 
 // return a generic netlink message builder
@@ -54,62 +54,62 @@ func (b *GenericMessageBuilder) AddGenericHeader(cmd uint8) *GenericMessageBuild
 
 // add an attribute from string
 func (b *GenericMessageBuilder) AddAttributeFromString(nlaType uint16, str string) *GenericMessageBuilder {
-  var err error
+	var err error
 	attr := new(GenericAttribute)
-  attr.Type = nlaType
+	attr.Type = nlaType
 	attr.data, err = unix.ByteSliceFromString(str)
-  if err != nil {
-    b.err = err
-  }
-  attr.pad()
-  b.msg.attrs = append(b.msg.attrs, attr)
+	if err != nil {
+		b.err = err
+	}
+	attr.pad()
+	b.msg.attrs = append(b.msg.attrs, attr)
 	return b
 }
 
 // finalize the lengths of the headers
 func (b *GenericMessageBuilder) Build() *GenericMessage {
-  b.msg.hdr.Len = unix.SizeofNlMsghdr + unix.SizeofNlAttr
-  for i := 0; i < len(b.msg.attrs); i++ {
-    b.msg.attrs[i].Len = unix.SizeofNlAttr + uint16(len(b.msg.attrs[i].data))
-    b.msg.hdr.Len += uint32(b.msg.attrs[i].Len) + uint32(len(b.msg.attrs[i].padding))
-  }
+	b.msg.hdr.Len = unix.SizeofNlMsghdr + unix.SizeofNlAttr
+	for i := 0; i < len(b.msg.attrs); i++ {
+		b.msg.attrs[i].Len = unix.SizeofNlAttr + uint16(len(b.msg.attrs[i].data))
+		b.msg.hdr.Len += uint32(b.msg.attrs[i].Len) + uint32(len(b.msg.attrs[i].padding))
+	}
 	return b.msg
 }
 
 // string representation of message
 func (m *GenericMessage) String() string {
-  var attrs []string
-  for i := 0; i < len(m.attrs); i++ {
-    attrs = append(attrs, fmt.Sprint(m.attrs[i]))
-  }
+	var attrs []string
+	for i := 0; i < len(m.attrs); i++ {
+		attrs = append(attrs, fmt.Sprint(m.attrs[i]))
+	}
 	return fmt.Sprintf("Netlink Header: %v\nGeneric Header: %v\nAttributes: %v", *m.hdr, *m.genHdr, attrs)
 }
 
 // byte representation of message (little endian)
 func (m *GenericMessage) Bytes() []byte {
-  var buf bytes.Buffer
-  binary.Write(&buf, binary.LittleEndian, m.hdr)
-  binary.Write(&buf, binary.LittleEndian, m.genHdr)
-  for i := 0; i < len(m.attrs); i++ {
-    binary.Write(&buf, binary.LittleEndian, m.attrs[i].Len)
-    binary.Write(&buf, binary.LittleEndian, m.attrs[i].Type)
-    binary.Write(&buf, binary.LittleEndian, m.attrs[i].data)
-    binary.Write(&buf, binary.LittleEndian, m.attrs[i].padding)
-  }
-  return buf.Bytes()
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, m.hdr)
+	binary.Write(&buf, binary.LittleEndian, m.genHdr)
+	for i := 0; i < len(m.attrs); i++ {
+		binary.Write(&buf, binary.LittleEndian, m.attrs[i].Len)
+		binary.Write(&buf, binary.LittleEndian, m.attrs[i].Type)
+		binary.Write(&buf, binary.LittleEndian, m.attrs[i].data)
+		binary.Write(&buf, binary.LittleEndian, m.attrs[i].padding)
+	}
+	return buf.Bytes()
 }
 
 // parse and return a GenericMessage
 func (m *GenericMessage) Parse(msg []byte) error {
-  return nil
+	return nil
 }
 
 // add padding to align data to 4 bytes (NLMSG_ALIGNTO)
 func (attr *GenericAttribute) pad() {
-  n := unix.NLMSG_ALIGNTO - (len(attr.data) % unix.NLMSG_ALIGNTO)
-  if n > 0 {
-    for i := 0; i < n; i++ {
-      attr.padding = append(attr.padding, byte(0))
-    }
-  }
+	n := unix.NLMSG_ALIGNTO - (len(attr.data) % unix.NLMSG_ALIGNTO)
+	if n > 0 {
+		for i := 0; i < n; i++ {
+			attr.padding = append(attr.padding, byte(0))
+		}
+	}
 }

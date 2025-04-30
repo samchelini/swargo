@@ -6,7 +6,7 @@ import (
 )
 
 const (
-  minBufSize = 8192
+	minBufSize = 8192
 )
 
 type Message interface {
@@ -25,17 +25,17 @@ func (nl *Netlink) SendMessage(msg Message) error {
 
 // receive a message
 func (nl *Netlink) ReceiveMessage(msg Message) error {
-  // create a receive buffer
+	// create a receive buffer
 	buf := make([]byte, nl.getBufSize())
 
-  // receive message
+	// receive message
 	_, _, err := unix.Recvfrom(nl.fd, buf, 0)
 	if err != nil {
 		return err
 	}
-  
-  // parse message
-  return msg.Parse(buf)
+
+	// parse message
+	return msg.Parse(buf)
 }
 
 // bind to netlink socket address
@@ -61,23 +61,23 @@ func Dial(family int) (*Netlink, error) {
 
 func (nl *Netlink) GetFamilyId(name string) error {
 	msg := NewGenericMessageBuilder().
-    AddNetlinkHeader(unix.GENL_ID_CTRL, Do).
+		AddNetlinkHeader(unix.GENL_ID_CTRL, Do).
 		AddGenericHeader(unix.CTRL_CMD_GETFAMILY).
-    AddAttributeFromString(unix.CTRL_ATTR_FAMILY_NAME, name).
+		AddAttributeFromString(unix.CTRL_ATTR_FAMILY_NAME, name).
 		Build()
 
 	// send to network
 	log.Printf("getting %s family id...\n", name)
-  log.Println("sending message...")
-  err := nl.SendMessage(msg)
+	log.Println("sending message...")
+	err := nl.SendMessage(msg)
 	if err != nil {
 		return err
 	}
 
 	// receive response
 	log.Println("receiving message...")
-  resp := new(GenericMessage)
-  err = nl.ReceiveMessage(resp)
+	resp := new(GenericMessage)
+	err = nl.ReceiveMessage(resp)
 	return err
 }
 
@@ -88,9 +88,9 @@ func (nl *Netlink) GetFd() int {
 
 // return a buffer size
 func (nl *Netlink) getBufSize() int {
-  bufSize := unix.Getpagesize()
-  if bufSize < minBufSize {
-    bufSize = minBufSize
-  }
-  return bufSize
+	bufSize := unix.Getpagesize()
+	if bufSize < minBufSize {
+		bufSize = minBufSize
+	}
+	return bufSize
 }
