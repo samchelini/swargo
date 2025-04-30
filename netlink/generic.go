@@ -100,8 +100,12 @@ func (m *GenericMessage) Bytes() []byte {
 }
 
 // parse and return a GenericMessage
-func (m *GenericMessage) Parse(msg []byte) error {
-	return nil
+func (b *GenericMessageBuilder) Parse(msg []byte) (*GenericMessage, error) {
+  b.msg = new(GenericMessage)
+	b.msg.attrs = make([]*GenericAttribute, 0)
+  //reader := bytes.NewReader(msg)
+  
+	return b.msg, nil
 }
 
 // add padding to align data to 4 bytes (NLMSG_ALIGNTO)

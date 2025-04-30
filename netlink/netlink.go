@@ -3,6 +3,7 @@ package netlink
 import (
 	"golang.org/x/sys/unix"
 	"log"
+  "encoding/binary"
 )
 
 const (
@@ -11,7 +12,11 @@ const (
 
 type Message interface {
 	Bytes() []byte
-	Parse(msg []byte) error
+  String() string
+}
+
+type MessageBuilder interface {
+  Parse(buf []byte) (Message, error)
 }
 
 type Netlink struct {
@@ -24,18 +29,13 @@ func (nl *Netlink) SendMessage(msg Message) error {
 }
 
 // receive a message
-func (nl *Netlink) ReceiveMessage(msg Message) error {
+func (nl *Netlink) ReceiveMessage() ([]byte, error) {
 	// create a receive buffer
 	buf := make([]byte, nl.getBufSize())
 
 	// receive message
-	_, _, err := unix.Recvfrom(nl.fd, buf, 0)
-	if err != nil {
-		return err
-	}
-
-	// parse message
-	return msg.Parse(buf)
+	n, _, err := unix.Recvfrom(nl.fd, buf, 0)
+	return buf[:n], err
 }
 
 // bind to netlink socket address
@@ -60,13 +60,15 @@ func Dial(family int) (*Netlink, error) {
 }
 
 func (nl *Netlink) GetFamilyId(name string) error {
-	msg := NewGenericMessageBuilder().
+  // build netlink message
+  builder := NewGenericMessageBuilder()
+	msg := builder.
 		AddNetlinkHeader(unix.GENL_ID_CTRL, Do).
 		AddGenericHeader(unix.CTRL_CMD_GETFAMILY).
 		AddAttributeFromString(unix.CTRL_ATTR_FAMILY_NAME, name).
 		Build()
 
-	// send to network
+	// send to netlink
 	log.Printf("getting %s family id...\n", name)
 	log.Println("sending message...")
 	err := nl.SendMessage(msg)
@@ -76,8 +78,17 @@ func (nl *Netlink) GetFamilyId(name string) error {
 
 	// receive response
 	log.Println("receiving message...")
-	resp := new(GenericMessage)
-	err = nl.ReceiveMessage(resp)
+	resp, err := nl.ReceiveMessage()
+  if err != nil {
+    return err
+  }
+  msgLen := binary.LittleEndian.Uint32(resp)
+  log.Printf("bytes received: %d\tmessage length: %d\n", len(resp), msgLen)
+  log.Printf("response: % X\n", resp)
+
+  // parse response
+  log.Println("parsing response...")
+  builder.Parse(resp)
 	return err
 }
 
