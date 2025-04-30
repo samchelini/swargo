@@ -5,6 +5,10 @@ import (
 	"log"
 )
 
+const (
+  minBufSize = 8192
+)
+
 type Message interface {
 	Bytes() []byte
 	Parse(msg []byte) error
@@ -14,8 +18,24 @@ type Netlink struct {
 	fd int
 }
 
-func (nl *Netlink) SendMessage(m Message) error {
-	return nil
+// send a netlink message
+func (nl *Netlink) SendMessage(msg Message) error {
+	return unix.Send(nl.fd, msg.Bytes(), 0)
+}
+
+// receive a message
+func (nl *Netlink) ReceiveMessage(msg Message) error {
+  // create a receive buffer
+	buf := make([]byte, nl.getBufSize())
+
+  // receive message
+	_, _, err := unix.Recvfrom(nl.fd, buf, 0)
+	if err != nil {
+		return err
+	}
+  
+  // parse message
+  return msg.Parse(buf)
 }
 
 // bind to netlink socket address
@@ -47,32 +67,30 @@ func (nl *Netlink) GetFamilyId(name string) error {
 		Build()
 
 	// send to network
-	log.Println("sending message...")
-	err := unix.Send(nl.fd, msg.Bytes(), 0)
+	log.Printf("getting %s family id...\n", name)
+  log.Println("sending message...")
+  err := nl.SendMessage(msg)
 	if err != nil {
 		return err
 	}
-
-	// create receive buffer
-  bufSize := unix.Getpagesize()
-  if bufSize < 8192 {
-    bufSize = 8192
-  }
-	log.Printf("buffer size: %d\n", bufSize)
-	rbuf := make([]byte, bufSize)
 
 	// receive response
 	log.Println("receiving message...")
-	n, _, err := unix.Recvfrom(nl.fd, rbuf, 0)
-	if err != nil {
-		return err
-	}
-	log.Printf("bytes received: %d\n", n)
-
-	return nil
+  resp := new(GenericMessage)
+  err = nl.ReceiveMessage(resp)
+	return err
 }
 
+// get netlink file descriptor
 func (nl *Netlink) GetFd() int {
 	return nl.fd
 }
 
+// return a buffer size
+func (nl *Netlink) getBufSize() int {
+  bufSize := unix.Getpagesize()
+  if bufSize < minBufSize {
+    bufSize = minBufSize
+  }
+  return bufSize
+}

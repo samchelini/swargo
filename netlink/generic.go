@@ -100,7 +100,7 @@ func (m *GenericMessage) Bytes() []byte {
 }
 
 // parse and return a GenericMessage
-func (m *GenericMessage) Parse(msg []bytes) *GenericMessage {
+func (m *GenericMessage) Parse(msg []byte) error {
   return nil
 }
 
