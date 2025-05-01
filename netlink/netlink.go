@@ -88,7 +88,8 @@ func (nl *Netlink) GetFamilyId(name string) error {
 
   // parse response
   log.Println("parsing response...")
-  builder.Parse(resp)
+  msg, err = builder.Parse(resp)
+  log.Printf("response: %s\n", msg)
 	return err
 }
 
