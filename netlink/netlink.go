@@ -1,9 +1,9 @@
 package netlink
 
 import (
+	"encoding/binary"
 	"golang.org/x/sys/unix"
 	"log"
-  "encoding/binary"
 )
 
 const (
@@ -12,11 +12,11 @@ const (
 
 type Message interface {
 	Bytes() []byte
-  String() string
+	String() string
 }
 
 type MessageBuilder interface {
-  Parse(buf []byte) (Message, error)
+	Parse(buf []byte) (Message, error)
 }
 
 type Netlink struct {
@@ -60,8 +60,8 @@ func Dial(family int) (*Netlink, error) {
 }
 
 func (nl *Netlink) GetFamilyId(name string) error {
-  // build netlink message
-  builder := NewGenericMessageBuilder()
+	// build netlink message
+	builder := NewGenericMessageBuilder()
 	msg := builder.
 		AddNetlinkHeader(unix.GENL_ID_CTRL, Do).
 		AddGenericHeader(unix.CTRL_CMD_GETFAMILY).
@@ -79,17 +79,17 @@ func (nl *Netlink) GetFamilyId(name string) error {
 	// receive response
 	log.Println("receiving message...")
 	resp, err := nl.ReceiveMessage()
-  if err != nil {
-    return err
-  }
-  msgLen := binary.LittleEndian.Uint32(resp)
-  log.Printf("bytes received: %d\tmessage length: %d\n", len(resp), msgLen)
-  log.Printf("response: % X\n", resp)
+	if err != nil {
+		return err
+	}
+	msgLen := binary.LittleEndian.Uint32(resp)
+	log.Printf("bytes received: %d\tmessage length: %d\n", len(resp), msgLen)
+	log.Printf("response: % X\n", resp)
 
-  // parse response
-  log.Println("parsing response...")
-  msg, err = builder.Parse(resp)
-  log.Printf("response: %s\n", msg)
+	// parse response
+	log.Println("parsing response...")
+	msg, err = builder.Parse(resp)
+	log.Printf("response: %s\n", msg)
 	return err
 }
 

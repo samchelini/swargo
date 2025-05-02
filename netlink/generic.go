@@ -101,35 +101,46 @@ func (m *GenericMessage) Bytes() []byte {
 
 // parse and return a GenericMessage
 func (b *GenericMessageBuilder) Parse(msg []byte) (*GenericMessage, error) {
-  b.msg = new(GenericMessage)
-  b.msg.hdr = new(unix.NlMsghdr)
-  b.msg.genHdr = new(unix.Genlmsghdr)
+	// initialize message and reader
+	b.msg = new(GenericMessage)
+	b.msg.hdr = new(unix.NlMsghdr)
+	b.msg.genHdr = new(unix.Genlmsghdr)
 	b.msg.attrs = make([]*GenericAttribute, 0)
-  reader := bytes.NewReader(msg)
-  err := binary.Read(reader, binary.LittleEndian, b.msg.hdr)
-  if err != nil {
-    return nil, err
-  }
-  err = binary.Read(reader, binary.LittleEndian, b.msg.genHdr)
-  if err != nil {
-    return nil, err
-  }
+	reader := bytes.NewReader(msg)
 
-  for err == nil {
-    attr := new(GenericAttribute)
-    err = binary.Read(reader, binary.LittleEndian, &attr.Len)
-    err = binary.Read(reader, binary.LittleEndian, &attr.Type)
-    attr.data = make([]byte, attr.Len - unix.SizeofNlAttr)
-    attr.padding = make([]byte, (unix.NLMSG_ALIGNTO - (len(attr.data) % unix.NLMSG_ALIGNTO)) % unix.NLMSG_ALIGNTO)
-    fmt.Printf("padding len: %d\n", len(attr.padding))
-    fmt.Printf("calc: %d\n\n", attr.Len % unix.NLMSG_ALIGNTO)
-    err = binary.Read(reader, binary.LittleEndian, attr.data)
-    if len(attr.padding) != 0 {
-      err = binary.Read(reader, binary.LittleEndian, attr.padding)
-    }
-    b.msg.attrs = append(b.msg.attrs, attr)
-  }
-  
+	// read netlink header
+	err := binary.Read(reader, binary.LittleEndian, b.msg.hdr)
+	if err != nil {
+		return nil, err
+	}
+	// size of netlink message minus the header that was just read
+	n := b.msg.hdr.Len - unix.SizeofNlMsghdr
+
+	// read generic netlink header
+	err = binary.Read(reader, binary.LittleEndian, b.msg.genHdr)
+	if err != nil {
+		return nil, err
+	}
+	n -= unix.SizeofNlAttr
+
+	for err == nil && n != 0 {
+		attr := new(GenericAttribute)
+		// read attribute length and type
+		err = binary.Read(reader, binary.LittleEndian, &attr.Len)
+		err = binary.Read(reader, binary.LittleEndian, &attr.Type)
+		attr.data = make([]byte, attr.Len-unix.SizeofNlAttr)
+		attr.padding = make([]byte, (unix.NLMSG_ALIGNTO-(len(attr.data)%unix.NLMSG_ALIGNTO))%unix.NLMSG_ALIGNTO)
+
+		// read attribute data
+		err = binary.Read(reader, binary.LittleEndian, attr.data)
+		if len(attr.padding) != 0 {
+			err = binary.Read(reader, binary.LittleEndian, attr.padding)
+		}
+		b.msg.attrs = append(b.msg.attrs, attr)
+
+		n -= (uint32(attr.Len) + uint32(len(attr.padding)))
+	}
+
 	return b.msg, err
 }
 
